@@ -13,6 +13,7 @@ const BacklinkFinder = () => {
   console.log("result", result);
 
   console.log("backlinks", backlinks);
+
   const handleSearch = async () => {
     if (!url.trim()) {
       alert("Please enter a URL.");
@@ -21,30 +22,36 @@ const BacklinkFinder = () => {
 
     setLoading(true);
     setResult(null);
+    setBacklinks(null);
+    setOverview(null);
 
     const options = {
-      method: "POST",
-      url: "https://backlinks-api2.p.rapidapi.com/backlinks",
+      method: "GET",
+      url: "https://seo-api-get-backlinks.p.rapidapi.com/backlinks.php",
+      params: {
+        domain: url, // 👈 use user's input instead of hardcoded domain
+      },
       headers: {
         "x-rapidapi-key": "085bd28979msh47d9c822c9b44f3p1c0e13jsncf61a6426940",
-        "x-rapidapi-host": "backlinks-api2.p.rapidapi.com",
-        "Content-Type": "application/json",
-      },
-      data: {
-        url: url,
-        mode: "exact",
+        "x-rapidapi-host": "seo-api-get-backlinks.p.rapidapi.com",
       },
     };
 
     try {
       const response = await axios.request(options);
       console.log("API Response:", response.data);
-      setResult(response.data); // Assuming the API returns JSON
-      setBacklinks(response.data.result.backlinks);
-      setOverview(response.data.result.overview);
+      setResult(response.data);
+      setBacklinks(response.data.result?.backlinks || []);
+      setOverview(response.data.result?.overview || {});
     } catch (error) {
       console.error("Error fetching backlinks:", error);
-      setResult("Failed to fetch backlinks. Please try again later.");
+      if (error.response?.status === 429) {
+        setResult(
+          "You're sending requests too fast! Please wait a minute and try again."
+        );
+      } else {
+        setResult("Failed to fetch backlinks. Please try again later.");
+      }
     } finally {
       setLoading(false);
     }
